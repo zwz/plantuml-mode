@@ -22,7 +22,8 @@
 ;; using a simple and intuitive language.
 
 ;;; HISTORY
-
+;; version 0.2, 2010-09-20 Initialize the keywords from the -language output of plantuml.jar
+;;                         instead of the hard-coded way.
 ;; version 0.1, 2010-08-25 First version
 
 
@@ -31,6 +32,8 @@
 (defgroup plantuml-mode nil
   "Major mode for editing plantuml file."
   :group 'languages)
+
+(defvar plantuml-jar-path (expand-file-name "~/plantuml.jar"))
 
 (defvar plantuml-mode-hook nil "Standard hook for plantuml-mode.")
 
@@ -49,242 +52,92 @@
     synTable)
   "Syntax table for `plantuml-mode'.")
 
-;;; font-lock
-(defvar plantuml-types '("participant" "actor" "usecase" "abstract" "abstract class" "interface" "enum" "package" "partition" "component" "state" "object" "title" "note" "end note" "end title" "end header" "end footer"
-                         ;;"note left" "note right" "note top" "note bottom" "note left of" "note right of" "note top of" "note bottom of" "note over" "left header" "center header" "right header" "left footer" "center footer" "right footer"
-))
-(defvar plantuml-keywords '("@startuml" "@enduml" "as" "autonumber" "newpage" "alt" "else" "opt" "loop" "par" "break" "critical" "end" "create" "footbox off" "skin" "skinparam" "if" "then" "else" "endif" "rotate" "activate" "deactivate" "destroy"))
-
-(defvar plantuml-preprocessors '("!include" "!define" "!undef" "!ifdef" "!endif" "!ifndef"))
-
-(defvar plantuml-builtins '("backgroundColor"
-                            "activityArrowColor"
-                            "activityBackgroundColor"
-                            "activityBorderColor"
-                            "activityStartColor"
-                            "activityEndColor"
-                            "activityBarColor"
-                            "usecaseArrowColor"
-                            "actorBackgroundColor"
-                            "actorBorderColor"
-                            "usecaseBackgroundColor"
-                            "usecaseBorderColor"
-                            "classArrowColor"
-                            "classBackgroundColor"
-                            "classBorderColor"
-                            "packageBackgroundColor"
-                            "packageBorderColor"
-                            "stereotypeCBackgroundColor"
-                            "stereotypeABackgroundColor"
-                            "stereotypeIBackgroundColor"
-                            "stereotypeEBackgroundColor"
-                            "componentArrowColor"
-                            "componentBackgroundColor"
-                            "componentBorderColor"
-                            "interfaceBackgroundColor"
-                            "interfaceBorderColor"
-                            "noteBackgroundColor"
-                            "noteBorderColor"
-                            "stateBackgroundColor"
-                            "stateBorderColor"
-                            "stateArrowColor"
-                            "sequenceArrowColor"
-                            "sequenceActorBackgroundColor"
-                            "sequenceActorBorderColor"
-                            "sequenceGroupBackgroundColor"
-                            "sequenceLifeLineBackgroundColor"
-                            "sequenceLifeLineBorderColor"
-                            "sequenceParticipantBackgroundColor"
-                            "sequenceParticipantBorderColor"
-                            "activityFontColor"
-                            "activityFontSize"
-                            "activityFontStyle"
-                            "activityFontName"
-                            "activityArrowFontColor"
-                            "activityArrowFontSize"
-                            "activityArrowFontStyle"
-                            "activityArrowFontName"
-                            "circledCharacterFontColor"
-                            "circledCharacterFontSize"
-                            "circledCharacterFontStyle"
-                            "circledCharacterFontName"
-                            "circledCharacterRadius"
-                            "classArrowFontColor"
-                            "classArrowFontSize"
-                            "classArrowFontStyle"
-                            "classArrowFontName"
-                            "classAttributeFontColor"
-                            "classAttributeFontSize"
-                            "classAttributeIconSize"
-                            "classAttributeFontStyle"
-                            "classAttributeFontName"
-                            "classFontColor"
-                            "classFontSize"
-                            "classFontStyle"
-                            "classFontName"
-                            "classStereotypeFontColor"
-                            "classStereotypeFontSize"
-                            "classStereotypeFontStyle"
-                            "classStereotypeFontName"
-                            "componentFontColor"
-                            "componentFontSize"
-                            "componentFontStyle"
-                            "componentFontName"
-                            "componentStereotypeFontColor"
-                            "componentStereotypeFontSize"
-                            "componentStereotypeFontStyle"
-                            "componentStereotypeFontName"
-                            "componentArrowFontColor"
-                            "componentArrowFontSize"
-                            "componentArrowFontStyle"
-                            "componentArrowFontName"
-                            "noteFontColor"
-                            "noteFontSize"
-                            "noteFontStyle"
-                            "noteFontName"
-                            "packageFontColor"
-                            "packageFontSize"
-                            "packageFontStyle"
-                            "packageFontName"
-                            "sequenceActorFontColor"
-                            "sequenceActorFontSize"
-                            "sequenceActorFontStyle"
-                            "sequenceActorFontName"
-                            "sequenceDividerFontColor"
-                            "sequenceDividerFontSize"
-                            "sequenceDividerFontStyle"
-                            "sequenceDividerFontName"
-                            "sequenceArrowFontColor"
-                            "sequenceArrowFontSize"
-                            "sequenceArrowFontStyle"
-                            "sequenceArrowFontName"
-                            "sequenceGroupingFontColor"
-                            "sequenceGroupingFontSize"
-                            "sequenceGroupingFontStyle"
-                            "sequenceGroupingFontName"
-                            "sequenceGroupingHeaderFontColor"
-                            "sequenceGroupingHeaderFontSize"
-                            "sequenceGroupingHeaderFontStyle"
-                            "sequenceGroupingHeaderFontName"
-                            "sequenceParticipantFontColor"
-                            "sequenceParticipantFontSize"
-                            "sequenceParticipantFontStyle"
-                            "sequenceParticipantFontName"
-                            "sequenceTitleFontColor"
-                            "sequenceTitleFontSize"
-                            "sequenceTitleFontStyle"
-                            "sequenceTitleFontName"
-                            "titleFontColor"
-                            "titleFontSize"
-                            "titleFontStyle"
-                            "titleFontName"
-                            "stateFontColor"
-                            "stateFontSize"
-                            "stateFontStyle"
-                            "stateFontName"
-                            "stateArrowFontColor"
-                            "stateArrowFontSize"
-                            "stateArrowFontStyle"
-                            "stateArrowFontName"
-                            "usecaseFontColor"
-                            "usecaseFontSize"
-                            "usecaseFontStyle"
-                            "usecaseFontName"
-                            "usecaseStereotypeFontColor"
-                            "usecaseStereotypeFontSize"
-                            "usecaseStereotypeFontStyle"
-                            "usecaseStereotypeFontName"
-                            "usecaseActorFontColor"
-                            "usecaseActorFontSize"
-                            "usecaseActorFontStyle"
-                            "usecaseActorFontName"
-                            "usecaseActorStereotypeFontColor"
-                            "usecaseActorStereotypeFontSize"
-                            "usecaseActorStereotypeFontStyle"
-                            "usecaseActorStereotypeFontName"
-                            "usecaseArrowFontColor"
-                            "usecaseArrowFontSize"
-                            "usecaseArrowFontStyle"
-                            "usecaseArrowFontName"
-                            "footerFontColor"
-                            "footerFontSize"
-                            "footerFontStyle"
-                            "footerFontName"
-                            "headerFontColor"
-                            "headerFontSize"
-                            "headerFontStyle"
-                            "headerFontName"
-                            "AliceBlue" "GhostWhite" "NavajoWhite"
-                            "AntiqueWhite" "GoldenRod" "Navy"
-                            "Aquamarine" "Gold" "OldLace"
-                            "Aqua" "Gray" "OliveDrab"
-                            "Azure" "GreenYellow" "Olive"
-                            "Beige" "Green" "OrangeRed"
-                            "Bisque" "HoneyDew" "Orange"
-                            "Black" "HotPink" "Orchid"
-                            "BlanchedAlmond" "IndianRed" "PaleGoldenRod"
-                            "BlueViolet" "Indigo" "PaleGreen"
-                            "Blue" "Ivory" "PaleTurquoise"
-                            "Brown" "Khaki" "PaleVioletRed"
-                            "BurlyWood" "LavenderBlush" "PapayaWhip"
-                            "CadetBlue" "Lavender" "PeachPuff"
-                            "Chartreuse" "LawnGreen" "Peru"
-                            "Chocolate" "LemonChiffon" "Pink"
-                            "Coral" "LightBlue" "Plum"
-                            "CornflowerBlue" "LightCoral" "PowderBlue"
-                            "Cornsilk" "LightCyan" "Purple"
-                            "Crimson" "LightGoldenRodYellow" "Red"
-                            "Cyan" "LightGreen" "RosyBrown"
-                            "DarkBlue" "LightGrey" "RoyalBlue"
-                            "DarkCyan" "LightPink" "SaddleBrown"
-                            "DarkGoldenRod" "LightSalmon" "Salmon"
-                            "DarkGray" "LightSeaGreen" "SandyBrown"
-                            "DarkGreen" "LightSkyBlue" "SeaGreen"
-                            "DarkKhaki" "LightSlateGray" "SeaShell"
-                            "DarkMagenta" "LightSteelBlue" "Sienna"
-                            "DarkOliveGreen" "LightYellow" "Silver"
-                            "DarkOrchid" "LimeGreen" "SkyBlue"
-                            "DarkRed" "Lime" "SlateBlue"
-                            "DarkSalmon" "Linen" "SlateGray"
-                            "DarkSeaGreen" "Magenta" "Snow"
-                            "DarkSlateBlue" "Maroon" "SpringGreen"
-                            "DarkSlateGray" "MediumAquaMarine" "SteelBlue"
-                            "DarkTurquoise" "MediumBlue" "Tan"
-                            "DarkViolet" "MediumOrchid" "Teal"
-                            "Darkorange" "MediumPurple" "Thistle"
-                            "DeepPink" "MediumSeaGreen" "Tomato"
-                            "DeepSkyBlue" "MediumSlateBlue" "Turquoise"
-                            "DimGray" "MediumSpringGreen" "Violet"
-                            "DodgerBlue" "MediumTurquoise" "Wheat"
-                            "FireBrick" "MediumVioletRed" "WhiteSmoke"
-                            "FloralWhite" "MidnightBlue" "White"
-                            "ForestGreen" "MintCream" "YellowGreen"
-                            "Fuchsia" "MistyRose" "Yellow"
-                            "Gainsboro" "Moccasin"
-))
-(defvar plantuml-types-regexp (concat "^\\s *\\(" (regexp-opt plantuml-types 'words) "\\|\\<\\(note\\s +over\\|note\\s +\\(left\\|right\\|bottom\\|top\\)\\s +\\(of\\)?\\)\\>\\|\\<\\(\\(left\\|center\\|right\\)\\s +\\(header\\|footer\\)\\)\\>\\)"))
-(defvar plantuml-keywords-regexp (concat "^\\s *" (regexp-opt plantuml-keywords 'words)  "\\|\\(<\\|<|\\|\\*\\|o\\)\\(\\.+\\|-+\\)\\|\\(\\.+\\|-+\\)\\(>\\||>\\|\\*\\|o\\)\\|\\.\\{2,\\}\\|-\\{2,\\}"))
-(defvar plantuml-builtins-regexp (regexp-opt plantuml-builtins 'words))
-(defvar plantuml-preprocessors-regexp (concat "^\\s *" (regexp-opt plantuml-preprocessors 'words)))
-
-(setq plantuml-font-lock-keywords
-      `(
-        (,plantuml-types-regexp . font-lock-type-face)
-        (,plantuml-keywords-regexp . font-lock-keyword-face)
-        (,plantuml-builtins-regexp . font-lock-builtin-face)
-        (,plantuml-preprocessors-regexp . font-lock-preprocessor-face)
-        ;; note: order matters
-        ))
+(defvar plantuml-types nil)
+(defvar plantuml-keywords nil)
+(defvar plantuml-preprocessors nil)
+(defvar plantuml-builtins nil)
 
 ;; keyword completion
 (defvar plantuml-kwdList nil "plantuml keywords.")
 
-(setq plantuml-kwdList (make-hash-table :test 'equal))
-(mapc (lambda (x) (puthash x t plantuml-kwdList)) plantuml-types)
-(mapc (lambda (x) (puthash x t plantuml-kwdList)) plantuml-keywords)
-(mapc (lambda (x) (puthash x t plantuml-kwdList)) plantuml-builtins)
-(mapc (lambda (x) (puthash x t plantuml-kwdList)) plantuml-preprocessors)
-(put 'plantuml-kwdList 'risky-local-variable t)
+;;; font-lock
+
+(defun plantuml-init ()
+  "Initialize the keywords or builtins from the cmdline language output"
+  (unless (file-exists-p plantuml-jar-path)
+    (error "Could not find plantuml.jar at %s" plantuml-jar-path))
+  (with-temp-buffer
+    (shell-command (concat "java -jar "
+                           (shell-quote-argument plantuml-jar-path)
+                           " -language") (current-buffer))
+    (goto-char (point-min))
+    (let ((found (search-forward ";" nil nil))
+          (word "")
+          (count 0)
+          (pos 0))
+      (while found
+        (forward-char)
+        (setq word (current-word))
+        (if (string= word "EOF") (setq found nil)
+            ;; else
+            (forward-line)
+            (setq count (string-to-number (current-word)))
+            (beginning-of-line 2)
+            (setq pos (point))
+            (forward-line count)
+            (cond ((string= word "type")
+                   (setq plantuml-types
+                         (split-string
+                          (buffer-substring-no-properties pos (point)))))
+                  ((string= word "keyword")
+                   (setq plantuml-keywords
+                         (split-string
+                          (buffer-substring-no-properties pos (point)))))
+                  ((string= word "preprocessor")
+                   (setq plantuml-preprocessors
+                         (split-string
+                          (buffer-substring-no-properties pos (point)))))
+                  (t (setq plantuml-builtins
+                           (append
+                            plantuml-builtins
+                            (split-string
+                             (buffer-substring-no-properties pos (point)))))))
+            ;;                  ((string= word "skinparameter")
+            ;;                  ((string= word "color")))
+            (setq found (search-forward ";" nil nil)))))))
+
+(unless plantuml-kwdList
+  (plantuml-init)
+  (defvar plantuml-types-regexp (concat "^\\s *\\(" (regexp-opt plantuml-types 'words) "\\|\\<\\(note\\s +over\\|note\\s +\\(left\\|right\\|bottom\\|top\\)\\s +\\(of\\)?\\)\\>\\|\\<\\(\\(left\\|center\\|right\\)\\s +\\(header\\|footer\\)\\)\\>\\)"))
+  (defvar plantuml-keywords-regexp (concat "^\\s *" (regexp-opt plantuml-keywords 'words)  "\\|\\(<\\|<|\\|\\*\\|o\\)\\(\\.+\\|-+\\)\\|\\(\\.+\\|-+\\)\\(>\\||>\\|\\*\\|o\\)\\|\\.\\{2,\\}\\|-\\{2,\\}"))
+  (defvar plantuml-builtins-regexp (regexp-opt plantuml-builtins 'words))
+  (defvar plantuml-preprocessors-regexp (concat "^\\s *" (regexp-opt plantuml-preprocessors 'words)))
+
+  (setq plantuml-font-lock-keywords
+        `(
+          (,plantuml-types-regexp . font-lock-type-face)
+          (,plantuml-keywords-regexp . font-lock-keyword-face)
+          (,plantuml-builtins-regexp . font-lock-builtin-face)
+          (,plantuml-preprocessors-regexp . font-lock-preprocessor-face)
+          ;; note: order matters
+          ))
+
+  (setq plantuml-kwdList (make-hash-table :test 'equal))
+  (mapc (lambda (x) (puthash x t plantuml-kwdList)) plantuml-types)
+  (mapc (lambda (x) (puthash x t plantuml-kwdList)) plantuml-keywords)
+  (mapc (lambda (x) (puthash x t plantuml-kwdList)) plantuml-builtins)
+  (mapc (lambda (x) (puthash x t plantuml-kwdList)) plantuml-preprocessors)
+  (put 'plantuml-kwdList 'risky-local-variable t)
+
+  ;; clear memory
+  (setq plantuml-types nil)
+  (setq plantuml-keywords nil)
+  (setq plantuml-builtins nil)
+  (setq plantuml-preprocessors nil)
+  (setq plantuml-types-regexp nil)
+  (setq plantuml-keywords-regexp nil)
+  (setq plantuml-builtins-regexp nil)
+  (setq plantuml-preprocessors-regexp nil))
 
 (defun plantuml-complete-symbol ()
   "Perform keyword completion on word before cursor."
@@ -310,52 +163,6 @@
                 meat))
              (message "Making completion list...%s" "done")))))
 
-;; clear memory
-(setq plantuml-types nil)
-(setq plantuml-keywords nil)
-(setq plantuml-builtins nil)
-(setq plantuml-preprocessors nil)
-(setq plantuml-types-regexp nil)
-(setq plantuml-keywords-regexp nil)
-(setq plantuml-builtins-regexp nil)
-(setq plantuml-preprocessors-regexp nil)
-
-;; (defun plantuml-buffer (target-image &optional confirm)
-;;   "run plantuml for the whole buffer"
-;;   (interactive
-;;    (list (if buffer-file-name
-;;              (read-file-name "Save the uml image as: "
-;;                              nil nil (concat (file-name-sans-extension buffer-file-name) ".png") nil)
-;;              (read-file-name "Save the uml image as: " default-directory
-;;                              (expand-file-name
-;;                               (concat (file-name-sans-extension (file-name-nondirectory (buffer-name))) ".png")
-;;                               default-directory)
-;;                              nil nil))
-;;          (not current-prefix-arg)))
-;;   (or (null target-image) (string-equal target-image "")
-;;       (progn
-;;         ;; If arg is just a directory,
-;;         ;; use the default file name, but in that directory.
-;;         (if (file-directory-p target-image)
-;;             (setq target-image (concat (file-name-as-directory target-image)
-;;                                        (file-name-sans-extension
-;;                                         (file-name-nondirectory
-;;                                          (or buffer-file-name (buffer-name)))) ".png")))
-;;         (and confirm
-;;              (file-exists-p target-image)
-;;              (or (y-or-n-p (format "File `%s' exists; overwrite? " target-image))
-;;                  (error "Canceled")))))
-;;   (print (buffer-string))
-;;   (let ((in-file (make-temp-file "org-babel-plantuml")))
-;;     (with-temp-file in-file (insert (buffer-string)))
-;;     (with-temp-buffer
-;;       (call-process-shell-command
-;;        (concat "java -jar ~/plantuml.jar -p") ;;plantuml-jar-path " -p ")
-;;        in-file
-;;        '(t nil))
-;;       (write-region nil nil target-image))
-;;     target-image))
-
 (add-to-list 'auto-mode-alist '("\\.plu$" . plantuml-mode))
 
 ;;;###autoload
@@ -368,7 +175,7 @@ Shortcuts             Command Name
   (interactive)
   (kill-all-local-variables)
 
-;;  (python-mode) ; for indentation
+  ;;  (python-mode) ; for indentation
   (setq major-mode 'plantuml-mode
         mode-name "plantuml")
   (set-syntax-table plantuml-mode-syntax-table)
@@ -376,8 +183,6 @@ Shortcuts             Command Name
 
   (make-local-variable 'font-lock-defaults)
   (setq font-lock-defaults '((plantuml-font-lock-keywords) nil t))
-
-
 
   (run-mode-hooks 'plantuml-mode-hook))
 
