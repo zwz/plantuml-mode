@@ -165,6 +165,44 @@
 
 (add-to-list 'auto-mode-alist '("\\.plu$" . plantuml-mode))
 
+(defun plantuml-trim-string-end (string)
+  "Remove trailing whitespace from the end of STRING."
+  (replace-regexp-in-string (rx (* (any " \t\n")) eos) "" string))
+
+(defun plantuml-render-string (string unicode)
+  "Render STRING as PlantUML, use UNICODE if non-nil."
+  (let ((in-file (make-temp-file "plantuml"))
+        (out-ext (if unicode ".utxt" ".atxt"))
+        (out-opt (if unicode "-tutxt" "-ttxt")))
+    (with-temp-file in-file
+      (insert "@startuml\n" string "\n@enduml\n"))
+    (let ((out-file (concat (file-name-sans-extension in-file) out-ext))
+          (command (format "java -jar %s %s %s" plantuml-jar-path out-opt
+                           in-file)))
+      (shell-command command)
+      (delete-file in-file nil)
+      (prog1
+          (with-temp-buffer
+            (insert-file-contents out-file)
+            (plantuml-trim-string-end
+             (buffer-substring (point-min) (point-max))))
+        (delete-file out-file nil)))))
+
+(defun plantuml-replace-region (beg end unicode)
+  "Render PlantUML at region from BEG to END, use UNICODE if non-nil."
+  (let ((indentation (current-indentation)))
+    (save-excursion
+      (goto-char end)
+      (insert (plantuml-render-string (buffer-substring beg end) unicode))
+      (indent-rigidly end (point) indentation)
+      (delete-region beg end))))
+
+;;;###autoload
+(defun plantuml-render-region ()
+  "Replace PlantUML at region with rendered UML."
+  (interactive)
+  (plantuml-replace-region (mark) (point) t))
+
 ;;;###autoload
 (defun plantuml-mode ()
   "Major mode for plantuml.
