@@ -39,7 +39,13 @@
 
 (defvar plantuml-mode-version nil "plantuml-mode version string.")
 
-(defvar plantuml-mode-map nil "Keymap for plantuml-mode")
+(defvar plantuml-run-command (concat "java -jar " (shell-quote-argument plantuml-jar-path)))
+
+(defvar plantuml-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "C-c C-c") 'plantuml-run-and-display)
+    map)
+  "Keymap for plantuml-mode")
 
 ;;; syntax table
 (defvar plantuml-mode-syntax-table
@@ -61,6 +67,28 @@
 (defvar plantuml-kwdList nil "plantuml keywords.")
 
 ;;; font-lock
+
+(defun plantuml-run()
+  "Run plantuml on the current buffer"
+  (interactive)
+  (shell-command (concat plantuml-run-command " " buffer-file-name)))
+
+(defun plantuml-display-image()
+  "Display the render image"
+  (interactive)
+  (let ((plantuml-file (concat (file-name-sans-extension buffer-file-name) ".png")))
+    (if (not (buffer-live-p (get-buffer (file-name-nondirectory plantuml-file))))
+	(find-file plantuml-file)
+      (progn
+	(switch-to-buffer (file-name-nondirectory plantuml-file))
+	(revert-buffer nil t nil)))))
+
+(defun plantuml-run-and-display()
+  "Run plantuml and display the resulting image"
+  (interactive)
+  (progn
+    (plantuml-run)
+    (plantuml-display-image)))
 
 (defun plantuml-init ()
   "Initialize the keywords or builtins from the cmdline language output"
