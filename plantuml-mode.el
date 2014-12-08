@@ -29,6 +29,7 @@
 
 (require 'thingatpt)
 
+;;; Code:
 (defgroup plantuml-mode nil
   "Major mode for editing plantuml file."
   :group 'languages)
@@ -66,8 +67,7 @@
 ;; keyword completion
 (defvar plantuml-kwdList nil "plantuml keywords.")
 
-;;; font-lock
-
+;; run plantuml
 (defun plantuml-run()
   "Run plantuml on the current buffer"
   (interactive)
@@ -90,14 +90,14 @@
     (plantuml-run)
     (plantuml-display-image)))
 
+;;; font-lock
+
 (defun plantuml-init ()
   "Initialize the keywords or builtins from the cmdline language output"
   (unless (file-exists-p plantuml-jar-path)
     (error "Could not find plantuml.jar at %s" plantuml-jar-path))
   (with-temp-buffer
-    (shell-command (concat "java -jar "
-                           (shell-quote-argument plantuml-jar-path)
-                           " -language") (current-buffer))
+    (shell-command (concat plantuml-run-command " -language") (current-buffer))
     (goto-char (point-min))
     (let ((found (search-forward ";" nil nil))
           (word "")
@@ -205,7 +205,7 @@
     (with-temp-file in-file
       (insert "@startuml\n" string "\n@enduml\n"))
     (let ((out-file (concat (file-name-sans-extension in-file) out-ext))
-          (command (format "java -jar %s %s %s" plantuml-jar-path out-opt
+          (command (format "%s %s %s" plantuml-run-command out-opt
                            in-file)))
       (shell-command command)
       (delete-file in-file nil)
@@ -253,3 +253,4 @@ Shortcuts             Command Name
   (run-mode-hooks 'plantuml-mode-hook))
 
 (provide 'plantuml-mode)
+;;; plantuml-mode ends here
