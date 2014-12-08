@@ -74,7 +74,7 @@
   (shell-command (concat plantuml-run-command " " buffer-file-name)))
 
 (defun plantuml-display-image()
-  "Display the render image"
+  "Display the rendered image"
   (interactive)
   (let ((plantuml-file (concat (file-name-sans-extension buffer-file-name) ".png")))
     (if (not (buffer-live-p (get-buffer (file-name-nondirectory plantuml-file))))
