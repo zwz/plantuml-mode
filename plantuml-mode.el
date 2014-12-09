@@ -29,6 +29,7 @@
 
 (require 'thingatpt)
 
+;;; Code:
 (defgroup plantuml-mode nil
   "Major mode for editing plantuml file."
   :group 'languages)
@@ -39,7 +40,13 @@
 
 (defvar plantuml-mode-version nil "plantuml-mode version string.")
 
-(defvar plantuml-mode-map nil "Keymap for plantuml-mode")
+(defvar plantuml-run-command (concat "java -jar " (shell-quote-argument plantuml-jar-path)))
+
+(defvar plantuml-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "C-c C-c") 'plantuml-run-and-display)
+    map)
+  "Keymap for plantuml-mode")
 
 ;;; syntax table
 (defvar plantuml-mode-syntax-table
@@ -60,6 +67,29 @@
 ;; keyword completion
 (defvar plantuml-kwdList nil "plantuml keywords.")
 
+;; run plantuml
+(defun plantuml-run()
+  "Run plantuml on the current buffer"
+  (interactive)
+  (shell-command (concat plantuml-run-command " " buffer-file-name)))
+
+(defun plantuml-display-image()
+  "Display the rendered image"
+  (interactive)
+  (let ((plantuml-file (concat (file-name-sans-extension buffer-file-name) ".png")))
+    (if (not (buffer-live-p (get-buffer (file-name-nondirectory plantuml-file))))
+	(find-file plantuml-file)
+      (progn
+	(switch-to-buffer (file-name-nondirectory plantuml-file))
+	(revert-buffer nil t nil)))))
+
+(defun plantuml-run-and-display()
+  "Run plantuml and display the resulting image"
+  (interactive)
+  (progn
+    (plantuml-run)
+    (plantuml-display-image)))
+
 ;;; font-lock
 
 (defun plantuml-init ()
@@ -67,9 +97,7 @@
   (unless (file-exists-p plantuml-jar-path)
     (error "Could not find plantuml.jar at %s" plantuml-jar-path))
   (with-temp-buffer
-    (shell-command (concat "java -jar "
-                           (shell-quote-argument plantuml-jar-path)
-                           " -language") (current-buffer))
+    (shell-command (concat plantuml-run-command " -language") (current-buffer))
     (goto-char (point-min))
     (let ((found (search-forward ";" nil nil))
           (word "")
@@ -177,7 +205,7 @@
     (with-temp-file in-file
       (insert "@startuml\n" string "\n@enduml\n"))
     (let ((out-file (concat (file-name-sans-extension in-file) out-ext))
-          (command (format "java -jar %s %s %s" plantuml-jar-path out-opt
+          (command (format "%s %s %s" plantuml-run-command out-opt
                            in-file)))
       (shell-command command)
       (delete-file in-file nil)
@@ -225,3 +253,4 @@ Shortcuts             Command Name
   (run-mode-hooks 'plantuml-mode-hook))
 
 (provide 'plantuml-mode)
+;;; plantuml-mode ends here
