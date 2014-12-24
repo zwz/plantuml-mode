@@ -205,7 +205,7 @@
     (with-temp-file in-file
       (insert "@startuml\n" string "\n@enduml\n"))
     (let ((out-file (concat (file-name-sans-extension in-file) out-ext))
-          (command (format "%s %s %s" plantuml-run-command out-opt
+          (command (format "%s %s \"%s\"" plantuml-run-command out-opt
                            in-file)))
       (shell-command command)
       (delete-file in-file nil)
