@@ -40,13 +40,21 @@
 
 (defvar plantuml-mode-version nil "plantuml-mode version string.")
 
-(defvar plantuml-run-command (concat "java -jar " (shell-quote-argument plantuml-jar-path)))
+(defvar plantuml-run-command "java -jar %s")
 
 (defvar plantuml-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-c C-c") 'plantuml-run-and-display)
     map)
   "Keymap for plantuml-mode")
+
+(defun plantuml-render-command (&rest arguments)
+  "Returns a nicely escaped command string for executing the plantuml JAR file."
+
+  ;; (shell-command (format "") (concat plantuml-run-command " " buffer-file-name))
+  (let ((cmd (format plantuml-run-command (shell-quote-argument plantuml-jar-path)))
+        (argstring (mapconcat 'shell-quote-argument arguments " ")))
+    (concat cmd " " argstring)))
 
 ;;; syntax table
 (defvar plantuml-mode-syntax-table
@@ -71,7 +79,9 @@
 (defun plantuml-run()
   "Run plantuml on the current buffer"
   (interactive)
-  (shell-command (concat plantuml-run-command " " buffer-file-name)))
+  (let ((cmd (plantuml-render-command buffer-file-name)))
+    (message "running: %s" cmd)
+    (shell-command cmd)))
 
 (defun plantuml-display-image()
   "Display the rendered image"
@@ -97,7 +107,7 @@
   (unless (file-exists-p plantuml-jar-path)
     (error "Could not find plantuml.jar at %s" plantuml-jar-path))
   (with-temp-buffer
-    (shell-command (concat plantuml-run-command " -language") (current-buffer))
+    (shell-command (plantuml-render-command "-language" current-buffer))
     (goto-char (point-min))
     (let ((found (search-forward ";" nil t))
           (word "")
@@ -205,8 +215,7 @@
     (with-temp-file in-file
       (insert "@startuml\n" string "\n@enduml\n"))
     (let ((out-file (concat (file-name-sans-extension in-file) out-ext))
-          (command (format "%s %s \"%s\"" plantuml-run-command out-opt
-                           in-file)))
+          (command (plantuml-render-command out-opt in-file)))
       (shell-command command)
       (delete-file in-file nil)
       (prog1
