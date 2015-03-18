@@ -259,6 +259,8 @@ Shortcuts             Command Name
   (make-local-variable 'font-lock-defaults)
   (setq font-lock-defaults '((plantuml-font-lock-keywords) nil t))
 
+  (make-local-variable 'comment-start)
+  (setq comment-start "'")
   (run-mode-hooks 'plantuml-mode-hook))
 
 (provide 'plantuml-mode)
