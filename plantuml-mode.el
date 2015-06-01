@@ -107,7 +107,7 @@
   (unless (file-exists-p plantuml-jar-path)
     (error "Could not find plantuml.jar at %s" plantuml-jar-path))
   (with-temp-buffer
-    (shell-command (plantuml-render-command "-language" current-buffer))
+    (shell-command (plantuml-render-command "-language") (current-buffer))
     (goto-char (point-min))
     (let ((found (search-forward ";" nil t))
           (word "")
