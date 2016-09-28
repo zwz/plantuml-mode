@@ -263,5 +263,9 @@ Shortcuts             Command Name
   (setq comment-start "'")
   (run-mode-hooks 'plantuml-mode-hook))
 
+;;;###autoload
+(progn
+  (add-to-list 'auto-mode-alist '("\\.(plantuml|puml)\\'" . plantuml-mode)))
+
 (provide 'plantuml-mode)
 ;;; plantuml-mode.el ends here
